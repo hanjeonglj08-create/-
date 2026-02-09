@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>FUTURE LOG - AI 상상 시각화</title>
+
+    <style>
+
+        :root { --primary: #00f2ff; --bg: #0a0a0c; --card: #16161a; }
+
+        body { background: var(--bg); color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+
+        .container { max-width: 600px; width: 100%; text-align: center; }
+
+        h1 { color: var(--primary); text-shadow: 0 0 10px var(--primary); margin-bottom: 5px; }
+
+        p { color: #888; margin-bottom: 30px; }
+
+        
+
+        .input-group { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #222; color: white; }
+
+        
+
+        button { background: var(--primary); color: black; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; margin-top: 10px; }
+
+        button:hover { transform: scale(1.02); box-shadow: 0 0 15px var(--primary); }
+
+        button:disabled { background: #555; cursor: not-allowed; }
+
+
+
+        #loading { display: none; margin: 20px 0; color: var(--primary); font-weight: bold; }
+
+        #resultImg { width: 100%; border-radius: 15px; display: none; margin-top: 20px; border: 2px solid var(--primary); }
+
+        
+
+        .gallery { width: 100%; margin-top: 50px; text-align: left; }
+
+        .post { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
+
+        .post img { width: 100%; border-radius: 10px; margin-top: 10px; }
+
+        .post-info { margin-top: 10px; color: #ddd; font-size: 0.9em; }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+<div class="container">
+
+    <h1>FUTURE LOG</h1>
+
+    <p>가장 멋진 미래를 살아갈 2명의 상상 기록소</p>
+
+
+
+    <div class="input-group">
+
+        <input type="text" id="userName" placeholder="이름을 입력하세요">
+
+        <input type="text" id="promptInput" placeholder="상상하는 미래를 영어로 설명해보세요 (예: Cyberpunk city, flying cars)">
+
+        <button id="drawBtn" onclick="generateAI()">✨ AI로 시각화하기</button>
+
+        <div id="loading">AI가 그림을 그리는 중입니다 (약 10~20초 소요)...</div>
+
+        <img id="resultImg" src="" alt="AI 생성 결과">
+
+    </div>
+
+
+
+    <div class="gallery" id="gallery">
+
+        </div>
+
+</div>
+
+
+
+<script>
+
+    // ⚠️ 주의: 실제 서비스 시에는 토큰을 숨겨야 하지만, 일단 학습용으로 사용합니다!
+
+    const HF_TOKEN = "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"; 
+
+    const MODEL_ID = "runwayml/stable-diffusion-v1-5"; // 사용할 무료 AI 모델
+
+
+
+    async function generateAI() {
+
+        const prompt = document.querySelector("#promptInput").value;
+
+        const name = document.querySelector("#userName").value;
+
+        const btn = document.querySelector("#drawBtn");
+
+        const loading = document.querySelector("#loading");
+
+        const resultImg = document.querySelector("#resultImg");
+
+
+
+        if (!prompt || !name) return alert("이름과 상상 내용을 입력해주세요!");
+
+
+
+        btn.disabled = true;
+
+        loading.style.display = "block";
+
+        resultImg.style.display = "none";
+
+
+
+        try {
+
+            const response = await fetch(`https://api-inference.huggingface.co/models/${MODEL_ID}`, {
+
+                headers: { Authorization: `Bearer ${HF_TOKEN}` },
+
+                method: "POST",
+
+                body: JSON.stringify({ inputs: prompt }),
+
+            });
+
+
+
+            if (!response.ok) throw new Error("AI 호출에 실패했습니다. (모델 로딩 중일 수 있으니 잠시 후 다시 시도하세요)");
+
+
+
+            const blob = await response.blob();
+
+            const imgUrl = URL.createObjectURL(blob);
+
+            
+
+            // 결과 보여주기
+
+            resultImg.src = imgUrl;
+
+            resultImg.style.display = "block";
+
+            
+
+            // 갤러리에 추가
+
+            addToGallery(name, prompt, imgUrl);
+
+            
+
+        } catch (error) {
+
+            alert(error.message);
+
+        } finally {
+
+            btn.disabled = false;
+
+            loading.style.display = "none";
+
+        }
+
+    }
+
+
+
+    function addToGallery(name, prompt, imgUrl) {
+
+        const gallery = document.querySelector("#gallery");
+
+        const post = document.createElement("div");
+
+        post.className = "post";
+
+        post.innerHTML = `
+
+            <strong>👤 ${name}</strong>
+
+            <div class="post-info">"${prompt}"</div>
+
+            <img src="${imgUrl}">
+
+        `;
+
+        gallery.prepend(post);
+
+    }
+
+</script>
+
+
+
+</body>
+
+</html>
