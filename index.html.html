@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>미래 프로젝트 - 실시간 대시보드</title>
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #0f172a; color: white; text-align: center; padding: 50px; }
+        .input-group { margin-top: 30px; margin-bottom: 50px; }
+        input { padding: 15px; border-radius: 8px; border: none; width: 250px; font-size: 1rem; }
+        button { padding: 15px 30px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #0ea5e9; transform: scale(1.05); }
+        
+        /* 리스트 스타일 */
+        #visitorList { max-width: 400px; margin: 0 auto; padding: 0; list-style: none; }
+        .visitor-item { background: #1e293b; margin: 10px 0; padding: 15px; border-radius: 10px; border-left: 5px solid #38bdf8; text-align: left; display: flex; justify-content: space-between; }
+        .time { font-size: 0.8rem; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>🚀 미래 프로젝트 실시간 명단</h1>
+    <p>이름을 입력하면 아래 리스트에 즉시 나타납니다.</p>
+    
+    <div class="input-group">
+        <input type="text" id="userName" placeholder="이름을 입력해주세요">
+        <button id="saveBtn">등록하기</button>
+    </div>
+
+    <hr style="border: 0.5px solid #334155; margin-bottom: 30px;">
+
+    <h3>👥 현재 접속자 명단</h3>
+    <ul id="visitorList">
+        </ul>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            projectId: "our-second-project-bebf4",
+            authDomain: "our-second-project-bebf4.firebaseapp.com",
+            storageBucket: "our-second-project-bebf4.appspot.com",
+            messagingSenderId: "982619711671",
+            appId: "1:982619711671:web:35583b276707835824c899"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 1. 데이터 저장 기능
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const nameValue = document.getElementById('userName').value;
+            if (!nameValue) return alert("이름을 써주세요!");
+
+            try {
+                await addDoc(collection(db, "visitors"), {
+                    name: nameValue,
+                    timestamp: new Date()
+                });
+                document.getElementById('userName').value = "";
+            } catch (e) { console.error(e); }
+        });
+
+        // 2. 실시간 데이터 불러오기 (마법의 구간)
+        const q = query(collection(db, "visitors"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const listElement = document.getElementById('visitorList');
+            listElement.innerHTML = ""; // 일단 비우고 새로 그림
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const li = document.createElement('li');
+                li.className = 'visitor-item';
+                li.innerHTML = `
+                    <span><strong>${data.name}</strong> 님이 방문함</span>
+                    <span class="time">${data.timestamp?.toDate().toLocaleTimeString() || ''}</span>
+                `;
+                listElement.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
